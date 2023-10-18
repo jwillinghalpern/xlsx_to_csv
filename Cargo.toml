@@ -1,0 +1,14 @@
+[package]
+name = "xlsx_to_csv"
+version = "0.2.0"
+edition = "2021"
+author = "Josh Willing Halpern <josh@willingapps.com>"
+description = "Converts XLSX files to CSV files"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+calamine = "0.22.1"
+clap = { version = "4.4.6", features = ["derive"] }
+csv = "1.1.6"
