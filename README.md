@@ -2,6 +2,20 @@
 
 CLI tool to convert xlsx files to csv
 
+## Usage
+
+### Convert in.xlsx to out.csv
+
+```bash
+xlsx_to_csv -i in.xlsx -o out.csv
+```
+
+### Show help
+
+```bash
+xlsx_to_csv -h
+```
+
 ## Build
 
 ### Windows
