@@ -41,7 +41,6 @@ fn xlsx_to_csv(
             csv_file.write_record(&values)?;
         }
     } else {
-        // return Err(anyhow!("Couldn't open sheet: '{}'", sheet_name));
         return Err(format!("Couldn't open sheet: '{}'", sheet_name).into());
     }
 
