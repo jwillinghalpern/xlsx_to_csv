@@ -22,7 +22,7 @@ Convert specific sheet from in.xlsx to out.csv.
 xlsx_to_csv -i in.xlsx -o out.csv --sheet "MySheetName"
 ```
 
-Customize the datetime, date, and time formats. If not specified, time and date will use the datetime format and everything will be treated as a datetime. BEWARE xlsx treats datetimes without dates as jan 1 1900.
+Customize the datetime, date, and time formats. If not specified, time and date will use the datetime format and everything will be treated as a datetime. BEWARE xlsx treats datetimes without dates as jan 1 1900. [Here's the syntax reference](https://docs.rs/chrono/latest/chrono/format/strftime/index.html)
 
 ```bash
 xlsx_to_csv -i in.xlsx -o out.csv --date-format="%m/%d/%Y" --time-format="%r" --datetime-format="%m/%d/%Y %r"
