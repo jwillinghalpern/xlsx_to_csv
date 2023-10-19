@@ -1,4 +1,5 @@
 use calamine::{open_workbook, DataType, Reader, Xlsx};
+use chrono::{NaiveDate, NaiveDateTime};
 use clap::Parser;
 use csv::Writer;
 
@@ -24,38 +25,35 @@ fn parse_cell(cell: &DataType) -> String {
         calamine::DataType::Float(x) => x.to_string(),
         calamine::DataType::String(x) => x.clone(),
         calamine::DataType::Bool(x) => match x {
-            true => "1".to_string(),
-            false => "0".to_string(),
+            true => "true".to_string(),
+            false => "false".to_string(),
         },
         calamine::DataType::DateTime(x) => {
-            // TODO: should we determine if the date value is 0 and treat this as just Time instead of DateTime?
-            // TODO: if there is no fractional value, should we treat this as just Date instead of DateTime?
-            // f64 represents days since Jan 1, 1900
-            // convert it to a human readable date
-            let days = *x as i32;
+            let days = *x as i64;
             let date =
-                chrono::NaiveDate::from_ymd(1900, 1, 1) + chrono::Duration::days(days.into());
-            // get the fractional value of the day
+                chrono::NaiveDate::from_ymd_opt(1900, 1, 1).unwrap() + chrono::Duration::days(days);
+            // get the fractional part of the number, which represents the time of day
             let frac = *x - *x as i32 as f64;
-            // convert fractional val to time
             let time =
-                chrono::NaiveTime::from_num_seconds_from_midnight((frac * 86400.0) as u32, 0);
+                chrono::NaiveTime::from_num_seconds_from_midnight_opt((frac * 86400.0) as u32, 0)
+                    .unwrap();
             let datetime = chrono::NaiveDateTime::new(date, time);
-            datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+
+            // TODO: we should expose cli options to:
+            // 1. specify the date, time, and datetime formats. This would also allow the user to decide whether to infer times/dates instead of just datetimes, since they're all stored the same in xlsx
+            if x.floor() == 0.0 {
+                datetime.format("%H:%M:%S").to_string()
+            } else if x % 1.0 == 0.0 {
+                datetime.format("%Y-%m-%d").to_string()
+            } else {
+                datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+            }
         }
-        calamine::DataType::Duration(x) => {
-            todo!()
-        }
-        calamine::DataType::DateTimeIso(x) => {
-            todo!()
-        }
-        calamine::DataType::DurationIso(x) => {
-            todo!()
-        }
-        calamine::DataType::Error(x) => {
-            todo!()
-        }
-        calamine::DataType::Empty => "".to_string(),
+        calamine::DataType::Duration(x) => x.to_string(),
+        calamine::DataType::DateTimeIso(x) => x.clone(),
+        calamine::DataType::DurationIso(x) => x.to_string(),
+        calamine::DataType::Error(x) => x.to_string(),
+        calamine::DataType::Empty => String::default(),
     }
 }
 
@@ -76,11 +74,11 @@ fn xlsx_to_csv(
         for row in range.rows() {
             let values = row
                 .iter()
-                .map(parse_cell)
                 // TODO: this currently returns an empty string if get_string fails. Should we error instead?
                 // .map(|cell| cell.get_string().unwrap_or_default())
                 // .map(|cell| cell.as_string().unwrap_or_default())
                 // .map(|cell| cell.to_string())
+                .map(parse_cell)
                 .collect::<Vec<_>>();
             csv_file.write_record(&values)?;
         }
