@@ -48,10 +48,16 @@ xlsx_to_csv -i in.xlsx -o out.csv --include-errors
 cargo build --target x86_64-pc-windows-gnu -r
 ```
 
-### Mac (assuming running on mac)
+### Mac (assuming running on m1 mac)
 
 ```bash
 cargo build -r
+```
+
+### Mac intel
+
+```bash
+cargo build --target x86_64-apple-darwin -r
 ```
 
 ### Linux (untested)
