@@ -71,17 +71,14 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
             // TODO: we should expose cli options to:
             // 1. specify the date, time, and datetime formats. This would also allow the user to decide whether to infer times/dates instead of just datetimes, since they're all stored the same in xlsx
             if x.floor() == 0.0 {
-                // datetime.format("%H:%M:%S").to_string()
                 datetime
                     .format(time_format.as_ref().unwrap_or(datetime_format))
                     .to_string()
             } else if x % 1.0 == 0.0 {
-                // datetime.format("%Y-%m-%d").to_string()
                 datetime
                     .format(date_format.as_ref().unwrap_or(datetime_format))
                     .to_string()
             } else {
-                // datetime.format("%Y-%m-%d %H:%M:%S").to_string()
                 datetime.format(datetime_format).to_string()
             }
         }
@@ -115,7 +112,7 @@ fn xlsx_to_csv(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
         for row in range.rows() {
             let values = row
                 .iter()
-                // .map(|cell| cell.to_string())
+                // could alternatively just call cell.to_string() here, but datetimes are funky
                 .map(|cell| parse_cell(cell, cli))
                 .collect::<Vec<_>>();
             csv_file.write_record(&values)?;
@@ -131,7 +128,6 @@ fn xlsx_to_csv(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
 fn main() {
     let cli = Cli::parse();
 
-    // if let Err(e) = xlsx_to_csv(&cli.input, &cli.output, cli.sheet.as_deref()) {
     if let Err(e) = xlsx_to_csv(&cli) {
         eprintln!("Error: {}", e);
         std::process::exit(1)
