@@ -68,8 +68,6 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
                     .unwrap();
             let datetime = chrono::NaiveDateTime::new(date, time);
 
-            // TODO: we should expose cli options to:
-            // 1. specify the date, time, and datetime formats. This would also allow the user to decide whether to infer times/dates instead of just datetimes, since they're all stored the same in xlsx
             if x.floor() == 0.0 {
                 datetime
                     .format(time_format.as_ref().unwrap_or(datetime_format))
