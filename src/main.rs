@@ -1,5 +1,4 @@
 use calamine::{open_workbook, DataType, Reader, Xlsx};
-use chrono::{NaiveDate, NaiveDateTime};
 use clap::Parser;
 use csv::Writer;
 
@@ -17,16 +16,46 @@ struct Cli {
     /// Sheet name. Defaults to first sheet in workbook.
     #[arg(long, short)]
     sheet: Option<String>,
+
+    /// render boolean as 1/0 instead of true/false
+    #[arg(long)]
+    numeric_bool: bool,
+
+    /// format for rendering datetime values
+    #[arg(long, default_value = "%Y-%m-%dT%h:%M:%SZ")]
+    datetime_format: String,
+
+    /// format for rendering time values (if different than datetime)
+    #[arg(long)]
+    time_format: Option<String>,
+
+    /// format for rendering date values (if different than datetime)
+    #[arg(long)]
+    date_format: Option<String>,
+
+    /// include cells with errors
+    #[arg(long)]
+    include_errors: bool,
 }
 
-fn parse_cell(cell: &DataType) -> String {
+fn parse_cell(cell: &DataType, cli: &Cli) -> String {
+    let Cli {
+        numeric_bool,
+        datetime_format,
+        date_format,
+        time_format,
+        include_errors,
+        ..
+    } = cli;
     match cell {
         calamine::DataType::Int(x) => x.to_string(),
         calamine::DataType::Float(x) => x.to_string(),
         calamine::DataType::String(x) => x.clone(),
-        calamine::DataType::Bool(x) => match x {
-            true => "true".to_string(),
-            false => "false".to_string(),
+        calamine::DataType::Bool(x) => match (numeric_bool, x) {
+            (false, true) => "true".to_string(),
+            (false, false) => "false".to_string(),
+            (true, true) => "1".to_string(),
+            (true, false) => "0".to_string(),
         },
         calamine::DataType::DateTime(x) => {
             let days = *x as i64;
@@ -42,26 +71,38 @@ fn parse_cell(cell: &DataType) -> String {
             // TODO: we should expose cli options to:
             // 1. specify the date, time, and datetime formats. This would also allow the user to decide whether to infer times/dates instead of just datetimes, since they're all stored the same in xlsx
             if x.floor() == 0.0 {
-                datetime.format("%H:%M:%S").to_string()
+                // datetime.format("%H:%M:%S").to_string()
+                datetime
+                    .format(time_format.as_ref().unwrap_or(datetime_format))
+                    .to_string()
             } else if x % 1.0 == 0.0 {
-                datetime.format("%Y-%m-%d").to_string()
+                // datetime.format("%Y-%m-%d").to_string()
+                datetime
+                    .format(date_format.as_ref().unwrap_or(datetime_format))
+                    .to_string()
             } else {
-                datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+                // datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+                datetime.format(datetime_format).to_string()
             }
         }
         calamine::DataType::Duration(x) => x.to_string(),
         calamine::DataType::DateTimeIso(x) => x.clone(),
         calamine::DataType::DurationIso(x) => x.to_string(),
-        calamine::DataType::Error(x) => x.to_string(),
+        calamine::DataType::Error(x) => match include_errors {
+            true => x.to_string(),
+            false => String::default(),
+        },
         calamine::DataType::Empty => String::default(),
     }
 }
 
-fn xlsx_to_csv(
-    input: &str,
-    output: &str,
-    sheet: Option<&str>,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn xlsx_to_csv(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
+    let Cli {
+        input,
+        output,
+        sheet,
+        ..
+    } = cli;
     let mut excel: Xlsx<_> = open_workbook(input)?;
     let mut csv_file = Writer::from_path(output)?;
 
@@ -78,7 +119,7 @@ fn xlsx_to_csv(
                 // .map(|cell| cell.get_string().unwrap_or_default())
                 // .map(|cell| cell.as_string().unwrap_or_default())
                 // .map(|cell| cell.to_string())
-                .map(parse_cell)
+                .map(|cell| parse_cell(cell, cli))
                 .collect::<Vec<_>>();
             csv_file.write_record(&values)?;
         }
@@ -93,7 +134,8 @@ fn xlsx_to_csv(
 fn main() {
     let cli = Cli::parse();
 
-    if let Err(e) = xlsx_to_csv(&cli.input, &cli.output, cli.sheet.as_deref()) {
+    // if let Err(e) = xlsx_to_csv(&cli.input, &cli.output, cli.sheet.as_deref()) {
+    if let Err(e) = xlsx_to_csv(&cli) {
         eprintln!("Error: {}", e);
         std::process::exit(1)
     } else {

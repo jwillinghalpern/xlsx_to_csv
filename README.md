@@ -4,16 +4,40 @@ CLI tool to convert xlsx files to csv
 
 ## Usage
 
-### Convert in.xlsx to out.csv
+Show help
+
+```bash
+xlsx_to_csv -h
+```
+
+Convert first sheet from in.xlsx to out.csv.
 
 ```bash
 xlsx_to_csv -i in.xlsx -o out.csv
 ```
 
-### Show help
+Convert specific sheet from in.xlsx to out.csv.
 
 ```bash
-xlsx_to_csv -h
+xlsx_to_csv -i in.xlsx -o out.csv --sheet "MySheetName"
+```
+
+Customize the datetime, date, and time formats. If not specified, time and date will use the datetime format and everything will be treated as a datetime.
+
+```bash
+xlsx_to_csv -i in.xlsx -o out.csv --date-format="%m/%d/%Y" --time-format="%I:%M:%S %p" --datetime-format="%m/%d/%Y %I:%M:%S %p"
+```
+
+print booleans as 0 or 1 instead of true or false
+
+```bash
+xlsx_to_csv -i in.xlsx -o out.csv --numeric-bool
+```
+
+include cell errors in output
+
+```bash
+xlsx_to_csv -i in.xlsx -o out.csv --include-errors
 ```
 
 ## Build
