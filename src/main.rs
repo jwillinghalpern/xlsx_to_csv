@@ -115,9 +115,6 @@ fn xlsx_to_csv(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
         for row in range.rows() {
             let values = row
                 .iter()
-                // TODO: this currently returns an empty string if get_string fails. Should we error instead?
-                // .map(|cell| cell.get_string().unwrap_or_default())
-                // .map(|cell| cell.as_string().unwrap_or_default())
                 // .map(|cell| cell.to_string())
                 .map(|cell| parse_cell(cell, cli))
                 .collect::<Vec<_>>();
