@@ -48,16 +48,16 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
         ..
     } = cli;
     match cell {
-        calamine::DataType::Int(x) => x.to_string(),
-        calamine::DataType::Float(x) => x.to_string(),
-        calamine::DataType::String(x) => x.clone(),
-        calamine::DataType::Bool(x) => match (numeric_bool, x) {
+        DataType::Int(x) => x.to_string(),
+        DataType::Float(x) => x.to_string(),
+        DataType::String(x) => x.clone(),
+        DataType::Bool(x) => match (numeric_bool, x) {
             (false, true) => "true".to_string(),
             (false, false) => "false".to_string(),
             (true, true) => "1".to_string(),
             (true, false) => "0".to_string(),
         },
-        calamine::DataType::DateTime(x) => {
+        DataType::DateTime(x) => {
             let days = *x as i64;
             let date =
                 chrono::NaiveDate::from_ymd_opt(1900, 1, 1).unwrap() + chrono::Duration::days(days);
@@ -85,14 +85,14 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
                 datetime.format(datetime_format).to_string()
             }
         }
-        calamine::DataType::Duration(x) => x.to_string(),
-        calamine::DataType::DateTimeIso(x) => x.clone(),
-        calamine::DataType::DurationIso(x) => x.to_string(),
-        calamine::DataType::Error(x) => match include_errors {
+        DataType::Duration(x) => x.to_string(),
+        DataType::DateTimeIso(x) => x.clone(),
+        DataType::DurationIso(x) => x.to_string(),
+        DataType::Error(x) => match include_errors {
             true => x.to_string(),
             false => String::default(),
         },
-        calamine::DataType::Empty => String::default(),
+        DataType::Empty => String::default(),
     }
 }
 
