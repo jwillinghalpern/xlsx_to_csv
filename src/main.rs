@@ -1,4 +1,5 @@
 use calamine::{open_workbook, DataType, Reader, Xlsx};
+use chrono::{Datelike, NaiveDateTime, Timelike};
 use clap::Parser;
 use csv::Writer;
 
@@ -38,6 +39,16 @@ struct Cli {
     include_errors: bool,
 }
 
+/// xlsx stores times with a date of 1899-12-31, so we can use that to detect if a cell is just a time
+fn has_no_date(d: NaiveDateTime) -> bool {
+    d.year() == 1899 && d.month() == 12 && d.day() == 31
+}
+
+/// technically this finds midnight too
+fn has_no_time(d: NaiveDateTime) -> bool {
+    d.hour() == 0 && d.minute() == 0 && d.second() == 0
+}
+
 fn parse_cell(cell: &DataType, cli: &Cli) -> String {
     let Cli {
         numeric_bool,
@@ -57,27 +68,16 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
             (true, true) => "1".to_string(),
             (true, false) => "0".to_string(),
         },
-        DataType::DateTime(x) => {
-            let days = *x as i64;
-            let date =
-                chrono::NaiveDate::from_ymd_opt(1900, 1, 1).unwrap() + chrono::Duration::days(days);
-            // get the fractional part of the number, which represents the time of day
-            let frac = *x - *x as i32 as f64;
-            let time =
-                chrono::NaiveTime::from_num_seconds_from_midnight_opt((frac * 86400.0) as u32, 0)
-                    .unwrap();
-            let datetime = chrono::NaiveDateTime::new(date, time);
-
-            if x.floor() == 0.0 {
-                datetime
-                    .format(time_format.as_ref().unwrap_or(datetime_format))
+        DataType::DateTime(_) => {
+            let d = cell.as_datetime().unwrap();
+            if has_no_date(d) {
+                d.format(time_format.as_ref().unwrap_or(datetime_format))
                     .to_string()
-            } else if x % 1.0 == 0.0 {
-                datetime
-                    .format(date_format.as_ref().unwrap_or(datetime_format))
+            } else if has_no_time(d) {
+                d.format(date_format.as_ref().unwrap_or(datetime_format))
                     .to_string()
             } else {
-                datetime.format(datetime_format).to_string()
+                d.format(datetime_format).to_string()
             }
         }
         DataType::Duration(x) => x.to_string(),
