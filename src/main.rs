@@ -1,5 +1,5 @@
 use calamine::{open_workbook, DataType, Reader, Xlsx};
-use chrono::{Datelike, NaiveDateTime, Timelike};
+use chrono::{Datelike, Duration, NaiveDateTime, Timelike};
 use clap::Parser;
 use csv::Writer;
 
@@ -34,6 +34,10 @@ struct Cli {
     #[arg(long)]
     date_format: Option<String>,
 
+    // /// format for rendering duration
+    // // TODO: currently durations like 123:04:01 are returned as a float of days like 5.127789351851852. Maybe better to preserve 123:04:01 and allow customizing it?
+    // #[arg(long, default_value = "%H:%M:%S")]
+    // duration_format: String,
     /// include cells with errors
     #[arg(long)]
     include_errors: bool,
@@ -55,6 +59,7 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
         datetime_format,
         date_format,
         time_format,
+        // duration_format,
         include_errors,
         ..
     } = cli;
@@ -80,7 +85,17 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
                 d.format(datetime_format).to_string()
             }
         }
-        DataType::Duration(x) => x.to_string(),
+        DataType::Duration(x) => {
+            // xlsx duration is represented as # of days like 5.12345 days
+            let seconds = (x * 24.0 * 60.0 * 60.0).round() as i64;
+            let d = Duration::seconds(seconds);
+            let hours = d.num_hours();
+            let minutes = d.num_minutes() - (hours * 60);
+            let seconds = d.num_seconds() - (minutes * 60) - (hours * 60 * 60);
+
+            format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+            // x.to_string()
+        }
         DataType::DateTimeIso(x) => x.clone(),
         DataType::DurationIso(x) => x.to_string(),
         DataType::Error(x) => match include_errors {
