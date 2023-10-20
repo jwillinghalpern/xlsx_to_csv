@@ -22,7 +22,7 @@ struct Cli {
     numeric_bool: bool,
 
     /// format for rendering datetime values
-    #[arg(long, default_value = "%Y-%m-%dT%h:%M:%SZ")]
+    #[arg(long, default_value = "%Y-%m-%dT%H:%M:%SZ")]
     datetime_format: String,
 
     /// format for rendering time values (if different than datetime)
