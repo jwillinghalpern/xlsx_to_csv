@@ -96,9 +96,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe0ba51a659bb6c8bffd6f7c1c5ffafcafa0c97e4769411d841c3cc5c154ab47"
 dependencies = [
  "byteorder",
+ "chrono",
  "codepage",
  "encoding_rs",
  "log",
+ "once_cell",
  "quick-xml",
  "serde",
  "zip",
@@ -129,6 +131,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-targets",
 ]
@@ -552,7 +555,7 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 
 [[package]]
 name = "xlsx_to_csv"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "calamine",
  "chrono",

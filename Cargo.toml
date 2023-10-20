@@ -1,6 +1,6 @@
 [package]
 name = "xlsx_to_csv"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 author = "Josh Willing Halpern <josh@willingapps.com>"
 description = "Converts XLSX files to CSV files"
@@ -9,7 +9,7 @@ description = "Converts XLSX files to CSV files"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-calamine = "0.22.1"
+calamine = { version = "0.22.1", features = ["dates"] }
 chrono = "0.4.31"
 clap = { version = "4.4.6", features = ["derive"] }
 csv = "1.1.6"
