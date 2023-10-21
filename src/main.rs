@@ -1,5 +1,5 @@
 use calamine::{open_workbook, DataType, Reader, Xlsx};
-use chrono::{Datelike, Duration, NaiveDateTime, Timelike};
+use chrono::{Datelike, NaiveDateTime, Timelike};
 use clap::Parser;
 use csv::Writer;
 
@@ -23,8 +23,8 @@ struct Cli {
     numeric_bool: bool,
 
     /// format for rendering datetime values
-    #[arg(long, default_value = "%Y-%m-%dT%H:%M:%SZ")]
-    datetime_format: String,
+    #[arg(long)]
+    datetime_format: Option<String>,
 
     /// format for rendering time values (if different than datetime)
     #[arg(long)]
@@ -34,22 +34,22 @@ struct Cli {
     #[arg(long)]
     date_format: Option<String>,
 
-    // /// format for rendering duration
-    // // TODO: currently durations like 123:04:01 are returned as a float of days like 5.127789351851852. Maybe better to preserve 123:04:01 and allow customizing it?
-    // #[arg(long, default_value = "%H:%M:%S")]
-    // duration_format: String,
+    /// format for rendering duration
+    #[arg(long)]
+    duration_hms: bool,
+
     /// include cells with errors
     #[arg(long)]
     include_errors: bool,
 }
 
 /// xlsx stores times with a date of 1899-12-31, so we can use that to detect if a cell is just a time
-fn has_no_date(d: NaiveDateTime) -> bool {
+fn is_time(d: NaiveDateTime) -> bool {
     d.year() == 1899 && d.month() == 12 && d.day() == 31
 }
 
 /// technically this finds midnight too
-fn has_no_time(d: NaiveDateTime) -> bool {
+fn is_date(d: NaiveDateTime) -> bool {
     d.hour() == 0 && d.minute() == 0 && d.second() == 0
 }
 
@@ -59,7 +59,7 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
         datetime_format,
         date_format,
         time_format,
-        // duration_format,
+        duration_hms: duration_as_hms,
         include_errors,
         ..
     } = cli;
@@ -73,32 +73,37 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
             (true, true) => "1".to_string(),
             (true, false) => "0".to_string(),
         },
-        DataType::DateTime(_) => {
+        DataType::DateTime(x) => {
+            // if no formatters defined, just stringify immediately
+            if datetime_format.is_none() && date_format.is_none() && time_format.is_none() {
+                return x.to_string();
+            }
+
+            // otherwise, parse and format
             let d = cell.as_datetime().unwrap();
-            if has_no_date(d) {
-                d.format(time_format.as_ref().unwrap_or(datetime_format))
-                    .to_string()
-            } else if has_no_time(d) {
-                d.format(date_format.as_ref().unwrap_or(datetime_format))
-                    .to_string()
+            let fmt = if is_time(d) {
+                time_format.as_deref()
+            } else if is_date(d) {
+                date_format.as_deref()
             } else {
-                d.format(datetime_format).to_string()
+                datetime_format.as_deref()
+            };
+            match fmt {
+                Some(fmt) => d.format(fmt).to_string(),
+                None => x.to_string(),
             }
         }
-        DataType::Duration(x) => {
-            // xlsx duration is represented as # of days like 5.12345 days
-            let seconds = (x * 24.0 * 60.0 * 60.0).round() as i64;
-            let d = Duration::seconds(seconds);
-            let hours = d.num_hours();
-            let minutes = d.num_minutes() - (hours * 60);
-            let seconds = d.num_seconds() - (minutes * 60) - (hours * 60 * 60);
-
-            // TODO: maybe if no --duration-format is specified, then just return to_string()
-            // TODO: on the same note, maybe --datetime-format should default to just calling to_string()
-            format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
-            // x.to_string()
-        }
-        DataType::DateTimeIso(x) => x.clone(),
+        DataType::Duration(x) => match duration_as_hms {
+            false => x.to_string(),
+            true => {
+                let d = cell.as_duration().unwrap();
+                let hours = d.num_hours();
+                let minutes = d.num_minutes() - (hours * 60);
+                let seconds = d.num_seconds() - (minutes * 60) - (hours * 60 * 60);
+                format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+            }
+        },
+        DataType::DateTimeIso(x) => x.to_string(),
         DataType::DurationIso(x) => x.to_string(),
         DataType::Error(x) => match include_errors {
             true => x.to_string(),
