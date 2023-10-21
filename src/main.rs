@@ -93,6 +93,8 @@ fn parse_cell(cell: &DataType, cli: &Cli) -> String {
             let minutes = d.num_minutes() - (hours * 60);
             let seconds = d.num_seconds() - (minutes * 60) - (hours * 60 * 60);
 
+            // TODO: maybe if no --duration-format is specified, then just return to_string()
+            // TODO: on the same note, maybe --datetime-format should default to just calling to_string()
             format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
             // x.to_string()
         }
