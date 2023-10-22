@@ -102,7 +102,6 @@ fn dies_missing_output() -> TestResult {
 fn default_first_sheet() -> TestResult {
     run(
         &["-i", CUSTOM_SHEET_FILE],
-        // "tests/expected/default-first-sheet.csv",
         expected_file!("default-first-sheet.csv"),
     )
 }
