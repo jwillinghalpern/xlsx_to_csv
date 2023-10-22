@@ -7,13 +7,16 @@ use tempfile::NamedTempFile;
 type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 const PRG: &str = "xlsx_to_csv";
-
 const TYPES_FILE: &str = "tests/inputs/types.xlsx";
-
 const CUSTOM_SHEET_FILE: &str = "tests/inputs/custom-sheet.xlsx";
 const SHEET2: &str = "CustomSheet2";
-
 const DONE: &str = "Done\n";
+
+macro_rules! expected_file {
+    ($str:expr) => {
+        concat!("tests/expected/", $str)
+    };
+}
 
 // --------------------------------------------------
 fn gen_bad_file() -> String {
@@ -31,7 +34,7 @@ fn gen_bad_file() -> String {
 }
 
 // --------------------------------------------------
-fn run_outfile(args: &[&str], expected_file: &str) -> TestResult {
+fn run(args: &[&str], expected_file: &str) -> TestResult {
     let expected = fs::read_to_string(expected_file)?;
     let tmp_file = NamedTempFile::new()?;
     let tmp_path = &tmp_file.path().to_str().unwrap();
@@ -74,112 +77,135 @@ fn dies_no_args() -> TestResult {
 
 // --------------------------------------------------
 #[test]
+fn dies_missing_input() -> TestResult {
+    Command::cargo_bin(PRG)?
+        .args(&["-o", "not-important.csv"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Usage"));
+    Ok(())
+}
+
+// --------------------------------------------------
+#[test]
+fn dies_missing_output() -> TestResult {
+    Command::cargo_bin(PRG)?
+        .args(&["-i", TYPES_FILE])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Usage"));
+    Ok(())
+}
+
+// --------------------------------------------------
+#[test]
 fn default_first_sheet() -> TestResult {
-    run_outfile(
+    run(
         &["-i", CUSTOM_SHEET_FILE],
-        "tests/expected/default-first-sheet.csv",
+        // "tests/expected/default-first-sheet.csv",
+        expected_file!("default-first-sheet.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn custom_sheet_name() -> TestResult {
-    run_outfile(
+    run(
         &["-i", CUSTOM_SHEET_FILE, "-s", SHEET2],
-        "tests/expected/custom-sheet-name.csv",
+        expected_file!("custom-sheet-name.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn no_options() -> TestResult {
-    run_outfile(&["-i", TYPES_FILE], "tests/expected/no-options.csv")
+    run(&["-i", TYPES_FILE], expected_file!("no-options.csv"))
 }
 
 // --------------------------------------------------
 #[test]
 fn date_format() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--date-format", "%Y-%m-%d"],
-        "tests/expected/date-format.csv",
+        expected_file!("date-format.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn date_format2() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--date-format", "%m/%d/%y"],
-        "tests/expected/date-format2.csv",
+        expected_file!("date-format2.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn time_format() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--time-format", "%H:%M:%S"],
-        "tests/expected/time-format.csv",
+        expected_file!("time-format.csv"),
     )
 }
 // --------------------------------------------------
 #[test]
 fn time_format2() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--time-format", "%r"],
-        "tests/expected/time-format2.csv",
+        expected_file!("time-format2.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn datetime_format() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--datetime-format", "%Y-%m-%d %H:%M:%S"],
-        "tests/expected/datetime-format.csv",
+        expected_file!("datetime-format.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn datetime_format2() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--datetime-format", "%m/%d/%Y %r"],
-        "tests/expected/datetime-format2.csv",
+        expected_file!("datetime-format2.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn include_errors() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--include-errors"],
-        "tests/expected/include-errors.csv",
+        expected_file!("include-errors.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn duration_hms() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--duration-hms"],
-        "tests/expected/duration-hms.csv",
+        expected_file!("duration-hms.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn numeric_bool() -> TestResult {
-    run_outfile(
+    run(
         &["-i", TYPES_FILE, "--numeric-bool"],
-        "tests/expected/numeric-bool.csv",
+        expected_file!("numeric-bool.csv"),
     )
 }
 
 // --------------------------------------------------
 #[test]
 fn all() -> TestResult {
-    run_outfile(
+    run(
         &[
             "-i",
             TYPES_FILE,
@@ -193,6 +219,6 @@ fn all() -> TestResult {
             "--duration-hms",
             "--numeric-bool",
         ],
-        "tests/expected/all-options.csv",
+        expected_file!("all-options.csv"),
     )
 }
