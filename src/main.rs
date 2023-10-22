@@ -120,7 +120,11 @@ fn xlsx_to_csv(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
         sheet,
         ..
     } = cli;
-    let mut excel: Xlsx<_> = open_workbook(input)?;
+
+    let mut excel: Xlsx<_> = open_workbook(input).map_err(|e| {
+        // prepend input filename
+        format!("{}: {}", input, e)
+    })?;
     let mut csv_file = Writer::from_path(output)?;
 
     let sheet_name = match sheet {

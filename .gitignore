@@ -1,4 +1,7 @@
 /target
-*.xlsx
-*.csv
 /scripts
+# Ignore xlsx and csv in project roon
+*.xlsx
+!tests/**/*.xlsx
+*.csv
+!tests/**/*.csv
