@@ -2,7 +2,7 @@
 name = "xlsx_to_csv"
 version = "0.5.0"
 edition = "2021"
-author = "Josh Willing Halpern <josh@willingapps.com>"
+authors = ["Josh Willing Halpern <josh@willingapps.com>"]
 description = "Converts XLSX files to CSV files"
 
 
